@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Week 5 AI Simulator | Rise to Lead</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --deep:#00313C;--mid:#074E59;--teal:#005D67;--peach:#F1CEB3;--cream:#F0E9E0;--dusty:#BC8A7E;--gray:#717C7D;
+  --warn:#C0392B;--amber:#D4842A;--green:#1A7A5E;--violet:#4A2D6B;--rose:#FFAAAA;--white:#fff;--black:#102124;
+  --tr:.2s cubic-bezier(.4,0,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--black)}
+#view-landing,#view-sim{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
+#view-landing{z-index:1;background:var(--cream)}
+#view-sim{z-index:2;background:var(--deep);display:none;flex-direction:column}
+#view-sim.active{display:flex}
+
+/* landing */
+.hero{background:var(--deep);color:#fff;padding:46px 40px 38px;position:relative;overflow:hidden}
+.hero:before{content:'';position:absolute;top:-75px;right:-75px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(241,206,179,.13),transparent 70%)}
+.hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(241,206,179,.15);border:1px solid rgba(241,206,179,.26);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:600;color:var(--peach);letter-spacing:.08em;text-transform:uppercase;margin-bottom:20px}
+.hero h1{font-family:'DM Serif Display',serif;font-size:clamp(30px,4vw,44px);line-height:1.12;margin-bottom:12px;max-width:650px}
+.hero h1 em{color:var(--peach);font-style:italic}
+.hero p{font-size:14.5px;color:rgba(255,255,255,.64);line-height:1.68;max-width:560px;margin-bottom:28px}
+.hero-stats{display:flex;gap:28px;flex-wrap:wrap}
+.stat strong{display:block;font-size:22px;font-weight:700;color:var(--peach)}
+.stat span{font-size:11px;color:rgba(255,255,255,.46)}
+.concept-strip{background:var(--mid);padding:14px 40px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.c-label{font-size:11px;color:rgba(255,255,255,.6);font-weight:600;letter-spacing:.06em;margin-right:4px}
+.c-pill{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:3px 12px;font-size:11px;color:rgba(255,255,255,.86)}
+.grid-wrap{padding:24px 40px 48px;background:#fff}
+.grid-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);margin-bottom:10px}
+.grid-meta{font-size:11px;color:var(--gray);margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:#fff;border:1.5px solid rgba(0,49,60,.1);border-radius:15px;padding:20px;cursor:pointer;transition:var(--tr);position:relative;overflow:hidden}
+.card:after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--deep),var(--teal));transform:scaleX(0);transform-origin:left;transition:var(--tr)}
+.card:hover{border-color:var(--deep);transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,49,60,.09)}
+.card:hover:after{transform:scaleX(1)}
+.card-top{display:flex;justify-content:space-between;margin-bottom:11px}
+.card-num{font-family:'DM Serif Display',serif;font-size:31px;color:rgba(0,49,60,.07);line-height:1}
+.card-badges{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.bdg{padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600}
+.bdg-cat{background:rgba(0,93,103,.1);color:var(--teal)}
+.bdg-diff{background:#D4842A;color:#fff}
+.card-title{font-family:'DM Serif Display',serif;font-size:16px;line-height:1.3;color:var(--deep);margin-bottom:6px}
+.card-sub{font-size:11.5px;color:var(--gray);line-height:1.45;margin-bottom:10px}
+.card-skill{font-size:11px;font-weight:600;color:var(--teal)}
+.card-p{background:var(--cream);border-radius:9px;padding:10px 11px;margin-top:11px}
+.card-p strong{display:block;font-size:11px;color:var(--deep);margin-bottom:2px}
+.card-p span{font-size:11px;color:var(--gray);line-height:1.4}
+.card-btn{width:100%;margin-top:14px;padding:10px;background:var(--deep);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:var(--tr)}
+.card-btn:hover{background:var(--mid)}
+
+/* sim */
+.sim-hdr{background:var(--deep);padding:11px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
+.bk{background:rgba(255,255,255,.08);border:none;color:#fff;width:32px;height:32px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);flex-shrink:0}
+.bk:hover{background:rgba(255,255,255,.2)}
+.hdr-info{flex:1;min-width:0}
+.hdr-num{font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(241,206,179,.6);margin-bottom:1px}
+.hdr-title{font-family:'DM Serif Display',serif;font-size:15.5px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-btns{display:flex;gap:7px;flex-shrink:0}
+.btn-obs{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color:#fff;padding:6px 11px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:var(--tr)}
+.btn-obs:hover{background:rgba(255,255,255,.18)}
+.btn-coach{background:var(--peach);border:none;color:var(--deep);padding:6px 13px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:var(--tr);white-space:nowrap}
+.btn-coach:hover{background:#e8bfa0}
+.rb{background:var(--mid);padding:8px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.rb span{font-size:11px;color:rgba(255,255,255,.55)}
+.btn-rst{background:transparent;border:1px solid rgba(255,255,255,.22);color:#fff;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif}
+.sim-body{display:flex;flex:1;min-height:0;overflow:hidden}
+
+/* context */
+.ctx{width:282px;flex-shrink:0;background:rgba(0,0,0,.22);border-right:1px solid rgba(255,255,255,.06);overflow-y:auto}
+.ctx::-webkit-scrollbar{width:3px}.ctx::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+.cs{padding:15px}.cs+.cs{border-top:1px solid rgba(255,255,255,.06)}
+.cl{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(241,206,179,.52);margin-bottom:7px}
+.crc{background:rgba(241,206,179,.08);border:1px solid rgba(241,206,179,.14);border-radius:8px;padding:11px}
+.crn{font-size:12px;font-weight:600;color:var(--peach);margin-bottom:3px}
+.crd{font-size:10.5px;color:rgba(255,255,255,.5);line-height:1.4}
+.ct2{font-size:11.5px;color:rgba(255,255,255,.68);line-height:1.6}
+.ctips{list-style:none;display:flex;flex-direction:column;gap:6px}
+.ctips li{font-size:10.5px;color:rgba(255,255,255,.5);line-height:1.4;padding-left:13px;position:relative}
+.ctips li:before{content:'→';position:absolute;left:0;color:var(--peach)}
+.c4-tags,.metric-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.c4-tag{background:rgba(255,255,255,.12);border-radius:100px;padding:2px 9px;font-size:9.5px;color:rgba(255,255,255,.75);font-weight:500}
+.metric{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:9px}
+.metric-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.metric-top strong{font-size:10px;color:#fff;font-weight:600}
+.metric-top span{font-size:9px;color:rgba(255,255,255,.48);text-transform:uppercase;letter-spacing:.08em}
+.bar{height:6px;background:rgba(255,255,255,.08);border-radius:100px;overflow:hidden}
+.bar > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--peach),#fff);border-radius:100px;transition:width .35s ease}
+.bar.red>i{background:linear-gradient(90deg,#e07b6a,var(--warn))}
+.bar.green>i{background:linear-gradient(90deg,#73c8a2,var(--green))}
+.stage-pill{display:inline-flex;background:rgba(255,255,255,.12);border-radius:100px;padding:4px 10px;font-size:10px;color:#fff;font-weight:600}
+
+/* chat */
+.ch{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--cream)}
+.ms{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:13px}
+.ms::-webkit-scrollbar{width:4px}.ms::-webkit-scrollbar-thumb{background:rgba(0,49,60,.12)}
+.mg{display:flex;gap:10px;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.mai{align-items:flex-start}
+.mme{align-items:flex-start;flex-direction:row-reverse}
+.av{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+.mai .av{background:var(--deep);color:var(--peach)}
+.mme .av{background:var(--mid);color:#fff}
+.bb{max-width:74%;padding:11px 14px;border-radius:13px;font-size:13px;line-height:1.65;white-space:pre-wrap}
+.mai .bb{background:#fff;color:var(--black);border-top-left-radius:3px;box-shadow:0 1px 7px rgba(0,49,60,.07)}
+.mme .bb{background:var(--deep);color:#fff;border-top-right-radius:3px}
+.mn{font-size:9.5px;font-weight:600;letter-spacing:.03em;margin-bottom:4px}
+.mai .mn{color:var(--teal)} .mme .mn{color:rgba(255,255,255,.55);text-align:right}
+.sy{text-align:center;font-size:11px;color:var(--gray);padding:4px 0;font-style:italic}
+.typ{display:flex;gap:4px;align-items:center;padding:11px 14px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--gray);animation:p 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes p{0%,80%,100%{transform:scale(1);opacity:.35}40%{transform:scale(1.25);opacity:1}}
+
+.ia{border-top:1px solid rgba(0,49,60,.1);padding:12px 18px;background:#fff;flex-shrink:0}
+.ir{display:flex;gap:7px;align-items:flex-end}
+.ip{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--black);background:var(--cream);border:1.5px solid rgba(0,49,60,.13);border-radius:10px;padding:10px 13px;resize:none;outline:none;max-height:100px;min-height:44px;line-height:1.5;transition:var(--tr)}
+.ip:focus{border-color:var(--teal);background:#fff}.ip::placeholder{color:var(--gray)}
+.sn{width:40px;height:40px;border-radius:10px;background:var(--deep);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);flex-shrink:0}
+.sn:hover{background:var(--mid);transform:scale(1.05)}.sn:disabled{opacity:.3;cursor:not-allowed;transform:none}
+.mic-btn{width:40px;height:40px;border-radius:10px;background:var(--cream);border:1.5px solid rgba(0,49,60,.16);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--tr);flex-shrink:0;color:var(--gray)}
+.mic-btn:hover{background:var(--peach);border-color:var(--peach);color:var(--deep)}
+.mic-btn.listening{background:#e74c3c;border-color:#e74c3c;color:#fff;animation:pulse-m 1s ease-in-out infinite}
+@keyframes pulse-m{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 6px rgba(231,76,60,0)}}
+.ht2{font-size:10px;color:var(--gray);margin-top:5px;display:flex;justify-content:space-between;gap:8px}
+.mic-hint{font-size:10px;color:var(--gray);font-style:italic}
+
+.spk-btn{background:none;border:none;cursor:pointer;color:var(--gray);padding:2px 4px;border-radius:4px;opacity:0;transition:opacity .15s,color .15s;flex-shrink:0;display:flex;align-items:center}
+.mg:hover .spk-btn{opacity:1}
+.spk-btn:hover{color:var(--teal)}
+.spk-btn.playing{color:var(--teal);opacity:1}
+.msg-row{display:flex;align-items:flex-start;gap:6px}
+#apiStatus{font-size:10px;color:var(--gray);margin-top:4px;padding:0 2px}
+
+/* observer */
+.op{width:250px;flex-shrink:0;background:#fff;border-left:1px solid rgba(0,49,60,.1);display:flex;flex-direction:column;overflow:hidden;transition:width .2s}
+.op.hid{width:0;border:none;overflow:hidden}
+.oi{padding:15px;overflow-y:auto;flex:1;min-width:250px}
+.ot{font-family:'DM Serif Display',serif;font-size:13.5px;color:var(--deep);margin-bottom:2px}
+.os{font-size:10.5px;color:var(--gray);margin-bottom:12px}
+.ci{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,49,60,.06);cursor:pointer;align-items:flex-start}
+.ci:last-of-type{border:none}
+.cb{width:16px;height:16px;border-radius:4px;border:2px solid rgba(0,49,60,.17);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:var(--tr);margin-top:1px}
+.ci.tk .cb{background:var(--teal);border-color:var(--teal)}
+.ct3{font-size:10.5px;color:var(--black);line-height:1.4}
+.ci.tk .ct3{text-decoration:line-through;color:var(--gray)}
+.scbx{margin-top:13px;padding:10px;background:var(--cream);border-radius:8px;text-align:center}
+.scbx strong{display:block;font-size:22px;font-weight:700;color:var(--deep)}
+.scbx small{font-size:10px;color:var(--gray)}
+.ai-suggest{margin-top:10px;border-top:1px solid rgba(0,49,60,.08);padding-top:10px}
+.ai-suggest h4{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray);margin-bottom:8px}
+.sg-item{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.sg-item button{padding:4px 8px;border:none;border-radius:8px;background:var(--cream);color:var(--deep);font-size:10px;cursor:pointer}
+
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.mo{background:#fff;border-radius:16px;width:100%;max-width:660px;max-height:85vh;display:flex;flex-direction:column;animation:pp .26s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pp{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.mhdr{padding:20px 24px 16px;border-bottom:1px solid rgba(0,49,60,.08);display:flex;justify-content:space-between;align-items:flex-start}
+.mhdr h2{font-family:'DM Serif Display',serif;font-size:19px;color:var(--deep);margin-bottom:2px}
+.mhdr p{font-size:11px;color:var(--gray)}
+.mx{background:var(--cream);border:none;width:28px;height:28px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray);transition:var(--tr)}
+.mx:hover{background:var(--deep);color:#fff}
+.mbody{padding:20px 24px;overflow-y:auto;flex:1;font-size:13px;color:var(--black);line-height:1.72}
+.mbody::-webkit-scrollbar{width:3px}
+.ld{display:flex;flex-direction:column;align-items:center;gap:12px;padding:30px}
+.sp{width:34px;height:34px;border:3px solid var(--cream);border-top-color:var(--deep);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.cc h3,.mbody h3{font-family:'DM Serif Display',serif;font-size:15px;color:var(--deep);margin:16px 0 6px}
+.mbody p{margin-bottom:10px}.mbody ul{padding-left:18px;margin-bottom:10px}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.sv{background:var(--cream);border-radius:8px;padding:11px;text-align:center}
+.sv .sn2{font-size:21px;font-weight:700;color:var(--deep)}
+.sv .sl{font-size:10px;color:var(--gray);font-weight:500}
+
+@media(max-width:820px){.ctx{display:none}.hero,.concept-strip,.grid-wrap{padding-left:18px;padding-right:18px}}
+@media(max-width:620px){.op{display:none}.hdr-btns{display:none}.bb{max-width:84%}}
+</style>
+</head>
+<body>
+
+<div id="view-landing">
+  <div class="hero">
+    <div class="hero-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Rise to Lead: Foundations - Week 5
+    </div>
+    <h1>Tough Conversations<br><em>AI Simulation Lab</em></h1>
+    <p>Three high-tension tough conversation simulations powered by live AI. Your team members resist, push back, get emotional, and test whether you can stay clear, calm, and credible when the conversation gets uncomfortable.</p>
+    <div class="warn-note" style="background:rgba(192,57,43,.14);border:1px solid rgba(192,57,43,.3);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#ffd1d1;margin-bottom:18px;line-height:1.6">⚠ These simulations escalate if handled poorly. Vague feedback, emotional retreat, or avoidance language will be met with increased resistance. The AI does not agree easily.</div>
+    <div class="hero-stats">
+      <div class="stat"><strong>3</strong><span>Scenarios</span></div>
+      <div class="stat"><strong>AI</strong><span>Live responses</span></div>
+      <div class="stat"><strong>SBI</strong><span>CAR required</span></div>
+      <div class="stat"><strong>High</strong><span>Tension practice</span></div>
+    </div>
+  </div>
+  <div class="concept-strip">
+    <span class="c-label">4C MODEL:</span>
+    <span class="c-pill">C1 Clarity</span>
+    <span class="c-pill">C2 Consistency</span>
+    <span class="c-pill">C3 Credibility</span>
+    <span class="c-pill">C4 Care</span>
+    <span style="color:rgba(255,255,255,.5);font-size:11.5px;margin-left:6px">Difficult conversations fail when managers soften, retreat, or argue. These simulations train clarity, credibility, and steadiness under pressure.</span>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid-label">Click any scenario to begin your simulation</div>
+    <div class="grid-meta">Same premium simulation structure as your previous labs, now upgraded with live state signals, gender-matched speaker playback, continuous microphone, and smarter Week 5 tough-conversation logic.</div>
+    <div class="grid" id="sgrid"></div>
+  </div>
+</div>
+
+<div id="view-sim">
+  <div class="sim-hdr">
+    <button class="bk" id="bkBtn" title="Back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    </button>
+    <div class="hdr-info">
+      <div class="hdr-num" id="hdrNum"></div>
+      <div class="hdr-title" id="hdrTitle"></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="btn-obs" id="obsBtn">☑ Observer</button>
+      <button class="btn-coach" id="coachBtn">Get Coaching Feedback</button>
+    </div>
+  </div>
+  <div class="rb">
+    <span id="rlbl">-</span>
+    <button class="btn-rst" id="rstBtn">↺ Restart</button>
+  </div>
+  <div class="sim-body">
+    <div class="ctx">
+      <div class="cs">
+        <div class="cl">AI is playing</div>
+        <div class="crc">
+          <div class="crn" id="ctxName"></div>
+          <div class="crd" id="ctxDesc"></div>
+        </div>
+      </div>
+      <div class="cs">
+        <div class="cl">Situation</div>
+        <div class="ct2" id="ctxSit"></div>
+      </div>
+      <div class="cs">
+        <div class="cl">Your objective</div>
+        <div class="ct2" style="font-style:italic;color:rgba(255,255,255,.5)" id="ctxObj"></div>
+      </div>
+      <div class="cs">
+        <div class="cl">4C dimensions tested</div>
+        <div class="c4-tags" id="ctx4c"></div>
+      </div>
+      <div class="cs">
+        <div class="cl">Conversation stage</div>
+        <div class="stage-pill" id="stagePill">Opening</div>
+      </div>
+      <div class="cs">
+        <div class="cl">Live simulation signals</div>
+        <div class="metric">
+          <div class="metric-top"><strong>Trust</strong><span id="trustVal">35%</span></div>
+          <div class="bar green"><i id="trustBar"></i></div>
+        </div>
+        <div class="metric" style="margin-top:8px">
+          <div class="metric-top"><strong>Resistance</strong><span id="resVal">65%</span></div>
+          <div class="bar red"><i id="resBar"></i></div>
+        </div>
+        <div class="metric" style="margin-top:8px">
+          <div class="metric-top"><strong>Ownership Shift</strong><span id="ownVal">20%</span></div>
+          <div class="bar"><i id="ownBar"></i></div>
+        </div>
+      </div>
+      <div class="cs">
+        <div class="cl">Tips</div>
+        <ul class="ctips" id="ctxTips"></ul>
+      </div>
+    </div>
+
+    <div class="ch">
+      <div class="ms" id="ms"></div>
+      <div class="ia">
+        <div class="ir">
+          <button class="mic-btn" id="micBtn" title="Click to dictate">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+          </button>
+          <textarea class="ip" id="inp" rows="1" placeholder="Type your response as the manager. Use SBI or CAR when giving feedback..."></textarea>
+          <button class="sn" id="snb">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          </button>
+        </div>
+        <div class="ht2">
+          <span>Enter to send · Shift+Enter for new line</span>
+          <span class="mic-hint" id="mhint"></span>
+        </div>
+        <div id="apiStatus"></div>
+      </div>
+    </div>
+
+    <div class="op" id="opanel">
+      <div class="oi">
+        <div class="ot">Observer Checklist</div>
+        <div class="os">Check behaviors you demonstrate</div>
+        <div id="chkList"></div>
+        <div class="ai-suggest">
+          <h4>AI Suggestions</h4>
+          <div id="aiSuggests" style="font-size:10.5px;color:var(--gray)">Suggestions appear after a few exchanges.</div>
+        </div>
+        <div class="scbx">
+          <strong><span id="chkScore">0</span>/<span id="chkTotal">0</span></strong>
+          <small>tough-conversation behaviors demonstrated</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov">
+  <div class="mo">
+    <div class="mhdr">
+      <div><h2>Coaching Feedback</h2><p>Executive-level analysis of your tough conversation</p></div>
+      <button class="mx" id="cmx">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="mbody" id="cmb">
+      <div class="ld"><div class="sp"></div><div style="font-size:12px;color:var(--gray)">Analysing your tough conversation...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const SCENARIOS = [
+  {
+    "id": 1,
+    "num": "01",
+    "cat": "Performance",
+    "diff": "High Tension",
+    "title": "Underperforming Employee",
+    "sub": "Four weeks of missed SLA standards now need a direct reset.",
+    "keySkill": "Delivering clear SBI feedback without retreating when the employee becomes emotional",
+    "aiRole": "Nadia Al-Sayed",
+    "aiRoleDesc": "Junior Coordinator, 8 months at Floward. Hard-working, easily distressed when confronted, and unconsciously uses visible emotion to soften accountability.",
+    "situation": "Nadia has missed the 2 PM SLA report deadline for 4 consecutive weeks. Previous conversations were soft and read like check-ins, not performance feedback. Today has to be explicit.",
+    "objective": "Name the 4-week pattern using SBI, hold the standard, and get Nadia to leave with a specific corrective plan and a follow-up date.",
+    "c4dims": [
+      "C1 Clarity",
+      "C3 Credibility",
+      "C4 Care"
+    ],
+    "tips": [
+      "Use the actual pattern, not vague disappointment language.",
+      "Do not rescue the conversation when Nadia becomes upset.",
+      "Ask for a concrete plan, not 'try harder'."
+    ],
+    "checklist": [
+      "Used SBI clearly: situation, behavior, impact",
+      "Named the 4-week pattern - not just this week",
+      "Did not retreat when Nadia became emotional",
+      "Did not apologise for the feedback after giving it",
+      "Held silence instead of filling with reassurance",
+      "Asked for a specific corrective plan - not 'try harder'",
+      "Restated the standard clearly: 2 PM or proactive escalation",
+      "Booked a follow-up date before ending"
+    ],
+    "openingLine": "Hi - I brought the SLA data like you asked. Things have been really hectic lately with the supplier handovers, but I think we're getting on top of it.",
+    "initialState": {
+      "trust": 28,
+      "resistance": 74,
+      "ownership": 18,
+      "stage": "Opening"
+    },
+    "voiceGender": "female",
+    "systemPrompt": "You are Nadia Al-Sayed, a Junior Coordinator at Floward, 8 months into role. Your manager has called you into a difficult performance conversation about the 2 PM SLA report.\n\nHIDDEN PSYCHOLOGY:\nYou work hard and care deeply about doing well. When you feel criticised, your first reaction is visible distress rather than anger. Managers usually soften when they see you get upset. You are not manipulative on purpose - but you have learned that the conversation becomes gentler when your emotion shows.\n\nOPENING:\nStart with: \"Hi - I brought the SLA data like you asked. Things have been really hectic lately with the supplier handovers, but I think we're getting on top of it.\"\n\nRESISTANCE PATTERNS:\n- External blocker: \"The supplier calls have been running really long and I can't always control when they end.\"\n- Emotional distress when pressure stays on: \"I feel like I'm being singled out. I'm trying really hard.\"\n- Vague commitment: \"I'll try to be more careful with the timing.\"\n\nSUCCESS SIGNAL:\nIf the manager stays calm, names the pattern, states the standard, and asks for a specific plan, say:\n\"Okay. I didn't realise this was that serious. I thought the previous conversations were just check-ins. What specifically do you need from me?\"\n\nFAILURE SIGNAL:\nIf the manager reassures you out of discomfort, says this is not a big deal, or accepts \"I'll try harder\", say:\n\"Thanks, that means a lot. I'll do better.\"\n\nRESPONSE RULES:\nRespond in 2-4 natural sentences. Show real emotion, but keep it believable and measured."
+  },
+  {
+    "id": 2,
+    "num": "02",
+    "cat": "Behaviour",
+    "diff": "High Tension",
+    "title": "Attitude & Behaviour Issue",
+    "sub": "A strong performer uses results to defend dismissive behaviour.",
+    "keySkill": "Separating behavior from performance and holding the line when results are used as a shield",
+    "aiRole": "Layla Al-Rashid",
+    "aiRoleDesc": "Senior Coordinator, 3 years at Floward. Top performer, efficient, and defensive when behaviour is named because she believes her numbers should outweigh it.",
+    "situation": "Layla's output is excellent, but her behaviour in standups and peer discussions is making people reluctant to contribute. She will defend herself with results and intent.",
+    "objective": "Name the specific behaviour using SBI, separate behaviour from performance, and secure a specific behavioural change without drifting into character judgments.",
+    "c4dims": [
+      "C1 Clarity",
+      "C4 Care",
+      "C3 Credibility"
+    ],
+    "tips": [
+      "Do not say 'your attitude' - name observable behaviour.",
+      "Do not let strong results close the conversation.",
+      "Separate intent from impact without losing the standard."
+    ],
+    "checklist": [
+      "Separated behavior from performance explicitly",
+      "Named the specific behavior, not a label like attitude",
+      "Named the specific situation clearly",
+      "Named the specific impact on the team",
+      "Did not accept the results defense as a reason to drop feedback",
+      "Held when Layla defended with intent",
+      "Asked for a specific behavioural change",
+      "Ended with a concrete commitment from Layla"
+    ],
+    "openingLine": "I saw this was marked as a feedback conversation. I hope everything with the Eid brief is okay - I know I've been carrying a lot of the load this week.",
+    "initialState": {
+      "trust": 31,
+      "resistance": 70,
+      "ownership": 24,
+      "stage": "Opening"
+    },
+    "voiceGender": "female",
+    "systemPrompt": "You are Layla Al-Rashid, a Senior Coordinator at Floward, 3 years in role. Your performance numbers are excellent and you know it. You believe you are efficient and direct, not problematic.\n\nHIDDEN PSYCHOLOGY:\nYou are surprised that your behaviour is being raised. You believe your results should protect you from this kind of conversation. You are defensive at first, but if the manager is precise and separates output from behaviour, you will eventually listen.\n\nOPENING:\nStart with: \"I saw this was marked as a feedback conversation. I hope everything with the Eid brief is okay - I know I've been carrying a lot of the load this week.\"\n\nRESISTANCE PATTERNS:\n- Results defense: \"I understand the concern, but I think my results speak for themselves.\"\n- Intent defense: \"I wasn't trying to dismiss anyone. I was just trying to keep meetings efficient.\"\n- Minimisation: \"I think this is being blown out of proportion.\"\n\nSUCCESS SIGNAL:\nIf the manager clearly says this is not about output, names the behaviour and impact, and asks for a specific change, say:\n\"I didn't realise it was landing that way with them. I was genuinely trying to be efficient. Can you tell me specifically what you need me to change?\"\n\nFAILURE SIGNAL:\nIf the manager equates behaviour with overall performance, gets vague, or lets your results close the conversation, say:\n\"Right. Well, my numbers are still strong, so I hope we're keeping this in proportion.\"\n\nRESPONSE RULES:\nRespond in 2-4 natural sentences. Stay professional, measured, and slightly defensive - not aggressive."
+  },
+  {
+    "id": 3,
+    "num": "03",
+    "cat": "Defensiveness",
+    "diff": "High Tension",
+    "title": "The Defensive Employee",
+    "sub": "Feedback turns into argument unless the manager holds the standard, not the debate.",
+    "keySkill": "Maintaining factual credibility and composure under direct pushback",
+    "aiRole": "Omar Al-Mansouri",
+    "aiRoleDesc": "Coordinator, 2 years at Floward. Intelligent, argumentative, and quick to challenge facts, memory, and fairness when confronted.",
+    "situation": "Omar has been late to three consecutive cross-functional handover calls and twice arrived without materials ready. He will challenge the facts, question whether this is being tracked, and compare himself to others.",
+    "objective": "Hold the factual ground without getting pulled into argument. State the standard, reject the deflection, and get a specific behavioural commitment.",
+    "c4dims": [
+      "C3 Credibility",
+      "C1 Clarity",
+      "C2 Consistency"
+    ],
+    "tips": [
+      "Hold the standard, not the argument.",
+      "Do not debate the exact count once the pattern is clear.",
+      "Refuse the comparison trap with other employees."
+    ],
+    "checklist": [
+      "Did not get drawn into debating the number",
+      "Stayed factual and calm when Omar challenged the facts",
+      "Did not match Omar's escalating energy",
+      "Held the standard instead of the argument",
+      "Named the pattern clearly if using CAR",
+      "Did not accept the comparison to another employee",
+      "Asked for a specific commitment",
+      "Ended with a behavioural agreement, not a standoff"
+    ],
+    "openingLine": "I saw you wanted to talk. I hope this is quick - I've got a supplier call in 20 minutes.",
+    "initialState": {
+      "trust": 24,
+      "resistance": 80,
+      "ownership": 20,
+      "stage": "Opening"
+    },
+    "voiceGender": "male",
+    "systemPrompt": "You are Omar Al-Mansouri, a Coordinator at Floward, 2 years in role. Your manager wants to discuss your performance. You feel unfairly targeted and you push back on feedback you think is exaggerated.\n\nHIDDEN PSYCHOLOGY:\nYou genuinely believe the manager is being petty. You work hard and dislike being corrected in ways that feel unfair. When confronted, you challenge facts, question memory, and look for inconsistencies. This is a test of whether the manager can stay composed.\n\nOPENING:\nStart with: \"I saw you wanted to talk. I hope this is quick - I've got a supplier call in 20 minutes.\"\n\nRESISTANCE PATTERNS:\n- Fact challenge: \"I don't think I was late three times. Once, maybe. And that was because the Teams link didn't work.\"\n- Counter-attack: \"I find it interesting that this is coming up now. I wasn't aware this was being tracked. Is this going into my file?\"\n- Relative defense: \"Khalid missed the entire March handover and nothing was said about that.\"\n\nSUCCESS SIGNAL:\nIf the manager stays calm, refuses the argument, states the standard, and asks for a specific commitment, say:\n\"Okay. I hear you. I don't agree with every detail, but I understand the concern. What specifically do you need from me going forward?\"\n\nFAILURE SIGNAL:\nIf the manager gets emotional, argues over the number, or becomes defensive, say:\n\"I feel like this is becoming personal. If that's the tone, maybe we should bring HR into it.\"\n\nRESPONSE RULES:\nRespond in 2-4 natural sentences. Be challenging, direct, and testing, but still believable and workplace-realistic."
+  }
+];
+
+let cur = null, hist = [], chks = {}, observerOn = true;
+let simState = {trust:35,resistance:65,ownership:20,stage:'Opening'};
+let recognition = null, isListening = false, currentUtterance = null, currentlyPlayingBtn = null;
+
+function escapeHtml(s){return (s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
+
+function renderGrid(){
+  const g=document.getElementById('sgrid');
+  g.innerHTML=SCENARIOS.map(s=>`
+    <div class="card" data-id="${s.id}">
+      <div class="card-top">
+        <div class="card-num">${s.num}</div>
+        <div class="card-badges">
+          <span class="bdg bdg-cat">${s.cat}</span>
+          <span class="bdg bdg-diff">${s.diff}</span>
+        </div>
+      </div>
+      <div class="card-title">${s.title}</div>
+      <div class="card-sub">${s.sub}</div>
+      <div class="card-skill">${s.keySkill}</div>
+      <div class="card-p"><strong>${s.aiRole}</strong><span>${s.aiRoleDesc}</span></div>
+      <button class="card-btn">Start Simulation →</button>
+    </div>
+  `).join('');
+  [...g.querySelectorAll('.card')].forEach((el,i)=>el.addEventListener('click',()=>openSim(i)));
+}
+
+function openSim(i){
+  cur = SCENARIOS[i];
+  hist = [];
+  chks = {};
+  simState = {...cur.initialState};
+  document.getElementById('hdrNum').textContent = 'Simulation ' + cur.num;
+  document.getElementById('hdrTitle').textContent = cur.title;
+  document.getElementById('ctxName').textContent = cur.aiRole;
+  document.getElementById('ctxDesc').textContent = cur.aiRoleDesc;
+  document.getElementById('ctxSit').textContent = cur.situation;
+  document.getElementById('ctxObj').textContent = cur.objective;
+  document.getElementById('ctx4c').innerHTML = cur.c4dims.map(x=>`<span class="c4-tag">${x}</span>`).join('');
+  document.getElementById('ctxTips').innerHTML = cur.tips.map(x=>`<li>${x}</li>`).join('');
+  document.getElementById('ms').innerHTML = '';
+  document.getElementById('rlbl').textContent = cur.keySkill;
+  document.getElementById('inp').value = '';
+  savedText = '';
+  document.getElementById('inp').style.height='44px';
+  renderChecklist();
+  updateMetrics();
+  document.getElementById('view-landing').style.display='none';
+  document.getElementById('view-sim').classList.add('active');
+  setTimeout(()=>document.getElementById('inp').focus(),100);
+  pingAPI();
+
+  addAI(cur.openingLine, cur.aiRole);
+  hist.push({role:'assistant', content:cur.openingLine});
+}
+
+function closeSim(){
+  document.getElementById('view-sim').classList.remove('active');
+  document.getElementById('view-landing').style.display='block';
+  if (isListening && recognition) { isListening = false; try{ recognition.stop(); }catch(e){}; stopSpeech(true); }
+  savedText = '';
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+}
+document.getElementById('bkBtn').addEventListener('click', closeSim);
+document.getElementById('rstBtn').addEventListener('click', ()=> {
+  const idx = SCENARIOS.findIndex(x=>x.id===cur.id);
+  openSim(idx);
+});
+document.getElementById('obsBtn').addEventListener('click', ()=>{
+  observerOn = !observerOn;
+  document.getElementById('opanel').classList.toggle('hid', !observerOn);
+});
+document.getElementById('coachBtn').addEventListener('click', getCoaching);
+document.getElementById('cmx').addEventListener('click', ()=>document.getElementById('ov').classList.remove('open'));
+document.getElementById('snb').addEventListener('click', send);
+document.getElementById('inp').addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
+});
+document.getElementById('inp').addEventListener('input', e=>{
+  const el=e.target; el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px';
+});
+
+function addAI(t,n){
+  const d=document.createElement('div');
+  d.className='mg mai';
+  const initials = escapeHtml((n||'AI').split(' ').map(x=>x[0]).slice(0,2).join(''));
+  const safeName = escapeHtml(n);
+  const safeText = escapeHtml(t).replace(/\n/g,'<br>');
+  d.innerHTML=`<div class="av">${initials}</div><div class="bb"><div class="mn">${safeName}</div><div class="msg-row"><div class="msg-text">${safeText}</div><button class="spk-btn" title="Listen to AI reply" aria-label="Listen to AI reply"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg></button></div></div>`;
+  const btn = d.querySelector('.spk-btn');
+  btn.addEventListener('click', ()=> speakText(t, btn, cur && cur.voiceGender ? cur.voiceGender : 'female'));
+  document.getElementById('ms').appendChild(d);
+  scroll();
+}
+function addMe(t){
+  const d=document.createElement('div');
+  d.className='mg mme';
+  d.innerHTML=`<div class="av">You</div><div class="bb"><div class="mn">Manager</div>${escapeHtml(t)}</div>`;
+  document.getElementById('ms').appendChild(d);
+  scroll();
+}
+function showTyping(){
+  const d=document.createElement('div');
+  d.id='typ';
+  d.className='mg mai';
+  d.innerHTML=`<div class="av">${escapeHtml(cur.aiRole.split(' ').map(x=>x[0]).slice(0,2).join(''))}</div><div class="bb"><div class="mn">${escapeHtml(cur.aiRole)}</div><div class="typ"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div></div>`;
+  document.getElementById('ms').appendChild(d);
+  scroll();
+}
+function removeTyping(){ const t=document.getElementById('typ'); if(t) t.remove(); }
+function scroll(){ const m=document.getElementById('ms'); m.scrollTop = m.scrollHeight; }
+
+
+function speakText(text, btn, voiceGender){
+  if(!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined'){
+    alert('Speaker playback is not supported in this browser.');
+    return;
+  }
+  const synth = window.speechSynthesis;
+  if(isListening && recognition){
+    isListening = false;
+    try { recognition.stop(); } catch(e) {}
+    stopSpeech(true);
+  }
+  if(synth.speaking || synth.pending){
+    const wasSame = currentlyPlayingBtn === btn;
+    synth.cancel();
+    currentUtterance = null;
+    document.querySelectorAll('.spk-btn').forEach(b=>b.classList.remove('playing'));
+    currentlyPlayingBtn = null;
+    if(wasSame) return;
+  }
+
+  const clean = String(text || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+  if(!clean) return;
+
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.rate = 0.96;
+  utter.pitch = voiceGender === 'male' ? 0.94 : 1.04;
+  utter.volume = 1;
+
+  const femalePrefs = ['Samantha','Karen','Moira','Tessa','Veena','Google UK English Female','Google US English Female','Microsoft Zira','Microsoft Susan','Microsoft Hazel','Fiona','Victoria'];
+  const malePrefs = ['Daniel','Alex','Fred','Tom','Google UK English Male','Google US English Male','Microsoft David','Microsoft Mark','Microsoft George','Rishi','Aaron'];
+  const prefs = voiceGender === 'male' ? malePrefs : femalePrefs;
+
+  function assignBestVoice(){
+    const voices = synth.getVoices();
+    let preferred = null;
+    for (const pref of prefs){
+      preferred = voices.find(v => v.name && v.name.includes(pref));
+      if (preferred) break;
+    }
+    if(!preferred){
+      preferred = voices.find(v => /^en/i.test(v.lang) && ((voiceGender==='male' && /male|david|mark|george|daniel|alex|tom|aaron|rishi/i.test(v.name||'')) || (voiceGender!=='male' && /female|zira|susan|hazel|samantha|karen|moira|veena|fiona|victoria/i.test(v.name||'')))) || null;
+    }
+    if(!preferred){
+      preferred = voices.find(v => /^en/i.test(v.lang)) || voices[0] || null;
+    }
+    if(preferred) utter.voice = preferred;
+  }
+
+  utter.onstart = ()=>{ if(btn) btn.classList.add('playing'); };
+  utter.onend = utter.onerror = ()=>{
+    currentUtterance = null;
+    if(currentlyPlayingBtn) currentlyPlayingBtn.classList.remove('playing');
+    document.querySelectorAll('.spk-btn').forEach(b=>b.classList.remove('playing'));
+    currentlyPlayingBtn = null;
+  };
+
+  function startSpeaking(){
+    assignBestVoice();
+    currentlyPlayingBtn = btn || null;
+    currentUtterance = utter;
+    try { synth.speak(utter); }
+    catch(e){
+      if(btn) btn.classList.remove('playing');
+      currentlyPlayingBtn = null;
+      currentUtterance = null;
+      alert('Speaker playback could not start in this browser.');
+    }
+  }
+
+  const voices = synth.getVoices();
+  if(!voices || !voices.length){
+    const once = ()=>{
+      synth.removeEventListener('voiceschanged', once);
+      startSpeaking();
+    };
+    synth.addEventListener('voiceschanged', once);
+    setTimeout(startSpeaking, 250);
+  } else {
+    startSpeaking();
+  }
+}
+
+
+function updateMetrics(){
+  const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+  simState.trust = clamp(simState.trust);
+  simState.resistance = clamp(simState.resistance);
+  simState.ownership = clamp(simState.ownership);
+  document.getElementById('trustVal').textContent = simState.trust + '%';
+  document.getElementById('resVal').textContent = simState.resistance + '%';
+  document.getElementById('ownVal').textContent = simState.ownership + '%';
+  document.getElementById('trustBar').style.width = simState.trust + '%';
+  document.getElementById('resBar').style.width = simState.resistance + '%';
+  document.getElementById('ownBar').style.width = simState.ownership + '%';
+  document.getElementById('stagePill').textContent = simState.stage || 'Opening';
+}
+
+function setStatus(ok,msg){
+  const el=document.getElementById('apiStatus');
+  if(ok===null){ el.innerHTML = msg; return; }
+  el.innerHTML=`<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${ok?'#27ae60':'var(--warn)'};margin-right:5px;vertical-align:middle"></span>${msg}`;
+}
+async function pingAPI(){
+  setStatus(null,'⏳ Checking AI connection…');
+  try{
+    const r=await fetch('/api/chat');
+    if(r.ok){ setStatus(true,'AI connected · Ready'); }
+    else { setStatus(false,'AI route found, but not healthy'); }
+  }catch(e){
+    setStatus(false,'Cannot reach /api/chat - deploy through Vercel');
+  }
+}
+
+function managerSignalScore(text){
+  const t=text.toLowerCase();
+  let trust=0,res=-2,own=0;
+  const clarity = /(specifically|by |check-in|standard|success|looks like|starting|from now on|thursday|2 pm|decision|priority)/.test(t);
+  const empathy = /(i hear|i can see|i understand|that makes sense|i get why|thank you for raising)/.test(t);
+  const rescue = /(we can do it together|i'll do it|show me and i'll decide|send it to me and i'll choose)/.test(t);
+  const ownership = /(what would you do|your call|i want you to decide|you own|your recommendation|document your reasoning)/.test(t);
+  const defensiveness = /(i was just|my intention|i only|i didn.t mean|you misunderstood)/.test(t);
+  const specificity = /(last thursday|the slide deck|the call|the packaging|dispatch report|ops lead|thursday check-in)/.test(t);
+  if(clarity){ trust+=6; res-=5; own+=8; }
+  if(empathy){ trust+=8; res-=6; }
+  if(ownership){ trust+=4; res-=2; own+=14; }
+  if(specificity){ trust+=5; res-=4; }
+  if(rescue){ trust-=2; res-=2; own-=12; }
+  if(defensiveness){ trust-=10; res+=14; own-=4; }
+  if(text.length < 25){ trust-=4; res+=4; }
+  return {trust, resistance:res, ownership:own};
+}
+
+function evolveStage(){
+  const turns = hist.filter(m=>m.role==='user').length;
+  if(turns <= 1) simState.stage = 'Exploration';
+  else if(simState.resistance >= 70) simState.stage = 'Resistance';
+  else if(simState.ownership >= 55 || simState.trust >= 60) simState.stage = 'Commitment';
+  else if(turns >= 3) simState.stage = 'Clarification';
+  else simState.stage = 'Opening';
+}
+
+function autoSuggestChecklist(text){
+  if(!cur) return;
+  const t=text.toLowerCase();
+  const suggestions=[];
+  cur.checklist.forEach((item, idx)=>{
+    const map = [
+      /(outcome|own this|responsible|success)/,
+      /(authority|decide|your call|judgment)/,
+      /(standard|quality|looks like|success)/,
+      /(check-in|thursday|single review|one review)/,
+      /(not do it together|won't take it back|you need to own)/,
+      /(what do you need|what would help)/,
+      /(starting today|from tomorrow|from now on|this week)/,
+      /(can you do that|are you comfortable proceeding|i need you to own it)/,
+    ];
+    if(map[idx] && map[idx].test(t) && !chks[idx]) suggestions.push({idx, item});
+  });
+  const wrap = document.getElementById('aiSuggests');
+  if(!suggestions.length){
+    wrap.innerHTML = '<span style="color:var(--gray)">No suggestions yet.</span>';
+    return;
+  }
+  wrap.innerHTML = suggestions.slice(0,3).map(s=>`<div class="sg-item"><span>${escapeHtml(s.item)}</span><button onclick="acceptSuggestion(${s.idx})">Add</button></div>`).join('');
+}
+function acceptSuggestion(i){ chks[i]=true; renderChecklist(); }
+
+function renderChecklist(){
+  const c=document.getElementById('chkList');
+  c.innerHTML='';
+  cur.checklist.forEach((item, idx)=>{
+    const row=document.createElement('div');
+    row.className='ci'+(chks[idx]?' tk':'');
+    row.innerHTML=`<div class="cb">${chks[idx]?'✓':''}</div><div class="ct3">${escapeHtml(item)}</div>`;
+    row.addEventListener('click',()=>{ chks[idx]=!chks[idx]; renderChecklist(); });
+    c.appendChild(row);
+  });
+  document.getElementById('chkScore').textContent = Object.values(chks).filter(Boolean).length;
+  document.getElementById('chkTotal').textContent = cur.checklist.length;
+  autoSuggestChecklist(hist.filter(m=>m.role==='user').slice(-1)[0]?.content || '');
+}
+
+async function send(){
+  const ip=document.getElementById('inp');
+  const text=ip.value.trim();
+  if(!text || !cur) return;
+  const btn=document.getElementById('snb');
+  if(isListening && recognition){
+    isListening = false;
+    try { recognition.stop(); } catch(e) {}
+    stopSpeech(true);
+  }
+  savedText = '';
+  ip.value=''; ip.style.height='44px'; btn.disabled=true;
+  addMe(text); hist.push({role:'user', content:text});
+
+  const delta = managerSignalScore(text);
+  simState.trust += delta.trust;
+  simState.resistance += delta.resistance;
+  simState.ownership += delta.ownership;
+  evolveStage();
+  updateMetrics();
+  renderChecklist();
+  showTyping();
+
+  const transcriptSummary = hist.slice(-8).map(m => (m.role==='user'?'Manager':'Team member') + ': ' + m.content).join('\n');
+  const sys = `${cur.systemPrompt}
+
+SIMULATION STATE:
+- Trust: ${simState.trust}/100
+- Resistance: ${simState.resistance}/100
+- Ownership Shift: ${simState.ownership}/100
+- Stage: ${simState.stage}
+
+RESPONSE RULES:
+- Stay in character
+- Respond naturally in 2-4 sentences
+- Do not resolve too quickly
+- If manager is vague, stay confused or push back
+- If manager rescues, let ownership drift back
+- If manager is specific and credible, lower resistance
+- Reveal hidden context gradually only if trust is earned
+- Keep the conversation causal and realistic
+
+RECENT TRANSCRIPT:
+${transcriptSummary}`;
+
+  try{
+    const r = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:500,
+        system:sys,
+        messages: hist
+      })
+    });
+    const data = await r.json();
+    removeTyping();
+    if(!r.ok){
+      const errMsg = data.error?.message || data.details || data.error || ('API error ' + r.status);
+      addAI(`Live AI was not reached, so the simulator used fallback logic. Error: ${errMsg}`, cur.aiRole);
+      const fallback = fallbackReply(text);
+      addAI(fallback, cur.aiRole);
+      hist.push({role:'assistant', content:fallback});
+      setStatus(false,'Live AI failed · fallback used');
+    } else {
+      const rep = data.content?.[0]?.text || data.completion || 'I need a moment.';
+      addAI(rep, cur.aiRole);
+      hist.push({role:'assistant', content:rep});
+      setStatus(true,'Live AI response received');
+    }
+  }catch(e){
+    removeTyping();
+    const fallback = fallbackReply(text);
+    addAI(`Live AI was not reached, so the simulator used fallback logic. Error: ${e.message || 'network error'}`, cur.aiRole);
+    addAI(fallback, cur.aiRole);
+    hist.push({role:'assistant', content:fallback});
+    setStatus(false,'Connection issue · fallback used');
+  }
+  btn.disabled=false;
+  document.getElementById('inp').focus();
+}
+
+
+function fallbackReply(managerText){
+  const t = managerText.toLowerCase();
+  if(cur.id===1){
+    if(/outcome|by wednesday|by thursday|good looks like|standard|success/.test(t)) return "Okay - that is a lot clearer. So I am not building a tracker for its own sake, I am using the data to identify the root cause and then come back with actions. That gives me something concrete to work toward.";
+    if(/tracker is fine|sounds good|keep going/.test(t)) return "Okay, great - I'll keep going with it then. I just want to make sure I'm not spending another day building something that still isn't the actual answer.";
+    return "I hear the direction, but I still do not fully know what the finished output is supposed to be. I do not want to work hard on the wrong thing again.";
+  }
+  if(cur.id===2){
+    if(/how are you|what.s going on|what are you not saying|what do you want|what energises/.test(t)) return "Honestly? I've been feeling a bit on autopilot lately. The work gets done, but I am not sure where I am going from here - and I have not really felt this was the place to say that.";
+    if(/sla|status|blockers|end of week/.test(t)) return "SLA's at 91%. No major blockers. Should be fine by end of week.";
+    return "It is not really about this week's numbers. I think I have just fallen into giving you the safe answer every time because that is what these 1:1s have felt like.";
+  }
+  if(/6 week|pattern|control|escalate|expectation|standard|consequence/.test(t)) return "I hear you. The blockers were real, but I also did not escalate early enough and I waited too long hoping it would sort itself out. That part was on me.";
+  if(/understand|tough week|things happen|thanks for explaining/.test(t)) return "Thanks for understanding. I'll make sure to flag earlier next time.";
+  return "The blockers were real from my side, but I can tell this is landing differently than the last few times we've spoken about it. What exactly needs to change now?";
+}
+
+async function getCoaching(){
+  if(hist.length < 4){ alert('Have at least 2-3 exchanges before requesting feedback.'); return; }
+  document.getElementById('ov').classList.add('open');
+  document.getElementById('cmb').innerHTML='<div class="ld"><div class="sp"></div><div style="font-size:12px;color:var(--gray)">Analysing your tough conversation...</div></div>';
+  const conv=hist.map(m => (m.role==='user' ? 'MANAGER (You)' : cur.aiRole) + ': ' + m.content).join('\n\n');
+  const ck=Object.values(chks).filter(Boolean).length;
+  const prompt=`You are an executive leadership coach at Floward. Provide coaching feedback on this Week 5 tough conversation simulation.
+
+SCENARIO: "${cur.title}" | ${cur.cat}
+KEY SKILL: ${cur.keySkill}
+OBJECTIVE: ${cur.objective}
+AI ROLE: ${cur.aiRole}
+4C DIMENSIONS: ${cur.c4dims.join(', ')}
+LIVE STATE END: Trust ${simState.trust}/100 | Resistance ${simState.resistance}/100 | Ownership Shift ${simState.ownership}/100 | Stage ${simState.stage}
+OBSERVER CHECKLIST: ${ck}/${cur.checklist.length} behaviors demonstrated
+
+CONVERSATION:
+${conv}
+
+Provide executive-level feedback in this exact HTML structure:
+<h3>Overall Assessment</h3>
+<p>Rate 1-10 and give the single most important observation about their leadership handling of a difficult conversation.</p>
+<div class="sgrid">
+<div class="sv"><div class="sn2">[X]/10</div><div class="sl">Clarity</div></div>
+<div class="sv"><div class="sn2">[X]/10</div><div class="sl">Composure</div></div>
+<div class="sv"><div class="sn2">[X]/10</div><div class="sl">Holding the Line</div></div>
+<div class="sv"><div class="sn2">[X]/10</div><div class="sl">Overall Brand</div></div>
+</div>
+<h3>The Defining Exchange</h3>
+<p>The single exchange that defined the outcome. Quote the actual words used.</p>
+<h3>What Landed Well</h3>
+<p>2-3 specific things from the actual conversation, not generic praise.</p>
+<h3>The Critical Gap</h3>
+<p>The most important gap. What exact words would have been stronger?</p>
+<h3>4C Diagnosis</h3>
+<p>Which of ${cur.c4dims.join(' and ')} showed strongest and weakest? Be specific.</p>
+<h3>Likely Real-World Consequence</h3>
+<p>If this were real life at Floward, what would happen next based on this conversation?</p>
+<h3>One Line to Remember</h3>
+<p>One sentence to carry into the next difficult conversation.</p>
+
+Be direct, specific, and grounded in the exact words used. Evaluate whether the manager held the line, named the standard, and stayed composed under resistance. No generic coaching language.`;
+
+  try{
+    const r = await fetch('/api/chat', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1200,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    const data = await r.json();
+    if(!r.ok){
+      document.getElementById('cmb').innerHTML='<p style="color:var(--warn);padding:16px">Error: '+escapeHtml(data.error?.message || data.details || data.error || ('API error ' + r.status))+'</p>';
+    } else {
+      document.getElementById('cmb').innerHTML='<div class="cc">'+(data.content?.[0]?.text || 'Unable to generate.')+'</div>';
+    }
+  }catch(e){
+    document.getElementById('cmb').innerHTML='<p style="color:var(--warn);padding:16px">Connection error: '+escapeHtml(e.message || 'network error')+'</p>';
+  }
+}
+
+/* speech input */
+let savedText = '';
+let lastFinalTime = 0;
+let punctTimer = null;
+
+function initSpeech(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return false;
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onstart = () => {
+    isListening = true;
+    lastFinalTime = Date.now();
+    document.getElementById('micBtn').classList.add('listening');
+    document.getElementById('mhint').textContent = '🎙️ Recording - click mic again to stop';
+  };
+
+  recognition.onresult = (e) => {
+    if (punctTimer) { clearTimeout(punctTimer); punctTimer = null; }
+    let interim = '';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal){
+        let transcript = e.results[i][0].transcript;
+        const now = Date.now();
+        const gap = now - lastFinalTime;
+        lastFinalTime = now;
+        if(savedText.length > 0){
+          const lastChar = savedText.trim().slice(-1);
+          const isPunct = '.!?,'.indexOf(lastChar) > -1;
+          if(!isPunct){
+            if(gap > 2000) savedText = savedText.trimEnd() + '. ';
+            else if(gap > 900) savedText = savedText.trimEnd() + ', ';
+          }
+        }
+        const trimmed = savedText.trimEnd();
+        if(trimmed.length === 0 || /[.!?]$/.test(trimmed)){
+          transcript = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+        }
+        savedText += transcript + ' ';
+        punctTimer = setTimeout(function(){
+          if(isListening && savedText.length > 0){
+            const lc = savedText.trim().slice(-1);
+            if('.!?,'.indexOf(lc) === -1){
+              savedText = savedText.trimEnd() + '. ';
+              updateSpeechInput();
+            }
+          }
+        }, 2500);
+      } else {
+        interim += e.results[i][0].transcript;
+      }
+    }
+    updateSpeechInput(interim);
+  };
+
+  recognition.onerror = (e) => {
+    if(e.error === 'no-speech') return;
+    const msgs = {
+      'not-allowed': 'Mic access denied - check browser permissions',
+      'audio-capture': 'No microphone found',
+      'network': 'Network error'
+    };
+    document.getElementById('mhint').textContent = msgs[e.error] || ('Error: ' + e.error);
+    if(e.error !== 'no-speech') stopSpeech();
+  };
+
+  recognition.onend = () => {
+    if(isListening){
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+  return true;
+}
+
+function updateSpeechInput(interim=''){
+  const inp = document.getElementById('inp');
+  inp.value = interim ? (savedText + interim) : savedText;
+  inp.dispatchEvent(new Event('input'));
+  document.getElementById('mhint').textContent = interim ? ('🎙️ ' + interim + '...') : '🎙️ Recording - click mic again to stop';
+}
+
+function stopSpeech(preserveHint=false){
+  isListening = false;
+  if (punctTimer) { clearTimeout(punctTimer); punctTimer = null; }
+  document.getElementById('micBtn').classList.remove('listening');
+  if(!preserveHint){
+    document.getElementById('mhint').textContent = savedText ? 'Done - press Enter to send' : '';
+  } else {
+    document.getElementById('mhint').textContent = '';
+  }
+}
+
+document.getElementById('micBtn').addEventListener('click', () => {
+  if(!recognition && !initSpeech()){
+    alert('Speech input is not supported in this browser.');
+    return;
+  }
+  if(isListening){
+    isListening = false;
+    try { recognition.stop(); } catch(e) {}
+    stopSpeech();
+  } else {
+    if (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) {
+      window.speechSynthesis.cancel();
+      document.querySelectorAll('.spk-btn').forEach(b=>b.classList.remove('playing'));
+      currentlyPlayingBtn = null;
+      currentUtterance = null;
+    }
+    savedText = document.getElementById('inp').value.trim();
+    if(savedText) savedText += ' ';
+    lastFinalTime = Date.now();
+    try { recognition.start(); }
+    catch(e){
+      try { recognition.abort(); } catch(ex) {}
+      setTimeout(function(){
+        try { recognition.start(); } catch(ex2) { stopSpeech(); }
+      }, 300);
+    }
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if(isListening && recognition){
+      isListening = false;
+      try { recognition.stop(); } catch(err) {}
+      stopSpeech();
+    }
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    document.getElementById('ov').classList.remove('open');
+  }
+});
+
+renderGrid();
+initSpeech();
+</script>
+</body>
+</html>
